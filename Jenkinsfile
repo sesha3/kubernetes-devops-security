@@ -1,12 +1,58 @@
 pipeline {
-  agent any
-
+  agent {
+    kubernetes {
+      yaml '''
+        apiVersion: v1
+        kind: Pod
+        spec:
+          containers:
+          - name: maven
+            image: maven:alpine
+            command:
+            - cat
+            tty: true
+          - name: docker
+            image: docker:latest
+            command:
+            - cat
+            tty: true
+            volumeMounts:
+             - mountPath: /var/run/docker.sock
+               name: docker-sock
+          volumes:
+          - name: docker-sock
+            hostPath:
+              path: /var/run/docker.sock    
+        '''
+    }
+  }
   stages {
-      stage('Build Artifact') {
+      stage('git version') {
             steps {
-              sh "mvn clean package -DskipTests=true"
-              archive 'target/*.jar' //so that they can be downloaded later
+              sh "git version"
             }
-        }   
+        }
+
+      stage('maven version') {
+            steps {
+              container('maven') {
+                sh 'mvn -v'
+              }
+            }
+        }
+
+      stage('docker version') {
+            steps {
+              container('maven') {
+                sh 'docker -v'
+              }
+            }
+        }
+
+      stage('k8s version') {
+            steps {
+              sh "kubectl version --short"
+            }
+        }
     }
 }
