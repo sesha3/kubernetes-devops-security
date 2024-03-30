@@ -52,6 +52,8 @@ pipeline {
       stage('git version') {
             steps {
               sh "git version"
+              sh "pwd"
+              sh "ls -l"
             }
         }
 
@@ -59,6 +61,8 @@ pipeline {
             steps {
               container('maven') {
                 sh 'mvn -v'
+                sh "pwd"
+                sh "ls -l"
               }
             }
         }
@@ -67,6 +71,8 @@ pipeline {
             steps {
               container('buildkitd') {
                 sh 'buildctl -v'
+                sh "pwd"
+                sh "ls -l"
               }
             }
         }
