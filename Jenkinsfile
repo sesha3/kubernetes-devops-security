@@ -4,6 +4,9 @@ pipeline {
       yaml '''
         apiVersion: v1
         kind: Pod
+        metadata:
+          annotations:
+            container.apparmor.security.beta.kubernetes.io/buildkitd: unconfined
         spec:
           containers:
           - name: maven
@@ -11,18 +14,37 @@ pipeline {
             command:
             - cat
             tty: true
-          - name: docker
-            image: docker:latest
-            command:
-            - cat
-            tty: true
+          - name: buildkitd
+            image: moby/buildkit:master-rootless
+            args:
+              - --oci-worker-no-process-sandbox
+            readinessProbe:
+              exec:
+                command:
+                  - buildctl
+                  - debug
+                  - workers
+              initialDelaySeconds: 5
+              periodSeconds: 30
+            livenessProbe:
+              exec:
+                command:
+                  - buildctl
+                  - debug
+                  - workers
+              initialDelaySeconds: 5
+              periodSeconds: 30
+            securityContext:
+              seccompProfile:
+                type: Unconfined
+              runAsUser: 1000
+              runAsGroup: 1000
             volumeMounts:
-             - mountPath: /var/run/docker.sock
-               name: docker-sock
+              - mountPath: /home/user/.local/share/buildkit
+                name: buildkitd
           volumes:
-          - name: docker-sock
-            hostPath:
-              path: /var/run/docker.sock    
+            - name: buildkitd
+              emptyDir: {}
         '''
     }
   }
@@ -43,16 +65,9 @@ pipeline {
 
       stage('docker version') {
             steps {
-              container('maven') {
-                sh 'docker -v'
-                sh 'echo test'
+              container('buildkitd') {
+                sh 'buildctl -v'
               }
-            }
-        }
-
-      stage('k8s version') {
-            steps {
-              sh "kubectl version --short"
             }
         }
     }
