@@ -45,6 +45,7 @@ pipeline {
             steps {
               container('maven') {
                 sh 'docker -v'
+                sh 'echo test'
               }
             }
         }
