@@ -98,7 +98,7 @@ pipeline {
             steps {
               container('buildkitd') {
                 sh 'printenv'
-                sh 'echo GIT_COMMIT: $GIT_COMMIT'
+                sh 'echo GIT_COMMIT: $GIT_COMMIT' //added comment
                 sh 'buildctl build --frontend=dockerfile.v0 --local context=. --local dockerfile=. --output type=image,name=${REGISTRY}/${REPOSITORY}:$BUILD_NUMBER,push=true'
               }
             }
